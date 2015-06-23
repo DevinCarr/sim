@@ -5,7 +5,7 @@ A very simple virtual machine based on [this](http://www.felixangell.com/virtual
 ## Current ISA
 Instruction | Machine code | Description
 ------------|--------------|------------
-push        | 0,`i32`      | Push the value `i32` onto the stack
+push `i32`  | 0,`i32`      | Push the value `i32` onto the stack
 pop         | 1            | Pop the top of the stack
 
 #### Memory:
