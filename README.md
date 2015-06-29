@@ -18,6 +18,7 @@ Stack size: `16`
 The stack pointer starts at the stack size as the stack pointer is an unsigned value and starting at -1 for a 0->16 stack wouldn't work.
 
 Registers: "size" = 7 (only 3..7 are accessable)
+
 Register | Value 
 ---------|-------
 eax      | 0
