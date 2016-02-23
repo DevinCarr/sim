@@ -1,6 +1,6 @@
 Sim
 =======
-A very simple virtual machine based on [this](http://www.felixangell.com/virtual-machine-in-c/), but written in rust instead. This also acts as a beginner project in rust.
+A very simple virtual machine based on [this](https://blog.felixangell.com/virtual-machine-in-c/), but written in rust instead. This also acts as a beginner project in rust.
 
 ## Current ISA
 Instruction      | Machine code  | Description
