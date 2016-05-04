@@ -1,12 +1,15 @@
+use std::io;
+
 #[derive(Debug)]
 #[allow(dead_code)]
 struct Mem {
-    inst: [i32; 17],
+    program: [i32; 32],
     registers: [i32; 7],
     stack: [i32; 16],
     running: bool,
 }
 
+#[allow(dead_code)]
 impl Mem {
     // Instruction pointer stored at 0 in register memory
     fn ip(&self) -> usize {
@@ -36,7 +39,7 @@ impl Mem {
 
 // Match the correct instruction with a function
 fn exec(mem: &mut Mem) {
-    match mem.inst[mem.ip()] {
+    match mem.program[mem.ip()] {
         0 => halt(mem),
         1 => pushi(mem),
         2 => pushr(mem),
@@ -44,6 +47,7 @@ fn exec(mem: &mut Mem) {
         4 => add(mem),
         5 => movi(mem),
         6 => movr(mem),
+        7 => log(mem),
         _ => er(mem, "Invalid instruction!"),
     }
 }
@@ -62,7 +66,7 @@ fn pushi(mem: &mut Mem) {
     }
     mem.spi(1); // increment stack pointer to new top
     mem.ipi(); // increment instruction pointer to the value
-    mem.stack[mem.sp()] = mem.inst[mem.ip()];
+    mem.stack[mem.sp()] = mem.program[mem.ip()];
 }
 
 // Instruction push (reg*) a register ptr
@@ -74,7 +78,7 @@ fn pushr(mem: &mut Mem) {
     }
     mem.spi(1); // increment stack pointer to new top
     mem.ipi(); // increment instruction pointer to the value
-    mem.stack[mem.sp()] = mem.reg()[mem.inst[mem.ip()] as usize];
+    mem.stack[mem.sp()] = mem.reg()[mem.program[mem.ip()] as usize];
 }
 
 // Instruction pop ()
@@ -92,21 +96,21 @@ fn pop(mem: &mut Mem) {
 fn add(mem: &mut Mem) {
     // fetch value
     mem.ipi();
-    let src = mem.reg()[mem.inst[mem.ip()] as usize];
+    let src = mem.reg()[mem.program[mem.ip()] as usize];
     // get the dest
     mem.ipi();
-    let val = mem.reg()[mem.inst[mem.ip()] as usize];
+    let val = mem.reg()[mem.program[mem.ip()] as usize];
     // add values and put back
-    mem.reg()[mem.inst[mem.ip()] as usize] = val + src;
+    mem.reg()[mem.program[mem.ip()] as usize] = val + src;
 }
 
 // Instruction mov ($im,dest*) *must be registers
 // Move an immediate value ($im) to dest register
 fn movi(mem: &mut Mem) {
     mem.ipi();
-    let val = mem.inst[mem.ip()];
+    let val = mem.program[mem.ip()];
     mem.ipi();
-    let dest = mem.inst[mem.ip()];
+    let dest = mem.program[mem.ip()];
     if dest >= mem.reg().len() as i32 || dest < 0 {
         er(mem,"Invalid register access!");
     }
@@ -118,18 +122,24 @@ fn movi(mem: &mut Mem) {
 fn movr(mem: &mut Mem) {
     mem.ipi();
     // check valid register location
-    let src = mem.inst[mem.ip()];
+    let src = mem.program[mem.ip()];
     if src >= mem.reg().len() as i32 || src < 0 {
         er(mem,"Invalid register access!");
     }
     mem.ipi();
     // check valid register location
-    let dest = mem.inst[mem.ip()];
+    let dest = mem.program[mem.ip()];
     if dest >= mem.reg().len() as i32 || dest < 0 {
         er(mem,"Invalid register access!");
     }
     // store src in dest
     mem.reg()[dest as usize] = mem.reg()[src as usize];
+}
+
+// Instruction log ()
+// Prints out the current stack
+fn log(mem: &mut Mem) {
+    println!("log: {:?}",mem.stack);
 }
 
 // Report an invalid instruction
@@ -140,17 +150,34 @@ fn er(mem: &mut Mem, message: &str) {
 
 fn main() {
     // initialize the memory with a zero'd stack
-    let mut mem: Mem = Mem { 
-        inst: [1,1,5,1,0,5,2,1,4,0,1,6,1,0,2,0,0],
+    let mut mem: Mem = Mem {
+        program:[0;32],
         registers:[0,16,0,0,0,0,0],
         stack:[0;16],
-        running:true,
-        };
-    println!("{:?}",mem);
-    // run through the instructions
-    while mem.running {
-        exec(&mut mem);
-        mem.ipi(); // Increment instruction pointer to next instruction
+        running:false,
+    };
+    let mut index = 0;
+
+    let mut input_s = String::new();
+    // main loop
+    loop {
+        match io::stdin().read_line(&mut input_s) {
+            Ok(n) => {
+                if n == 0 {
+                    mem.running = true;
+                    // run through the instructions
+                    while mem.running {
+                        exec(&mut mem);
+                        mem.ipi(); // Increment instruction pointer to next instruction
+                    }
+                    break;
+                }
+                let input: i32 = input_s.trim().parse::<i32>().ok().expect("str-to-i32 conv failed");
+                mem.program[index] = input;
+                index += 1;
+                input_s = String::new();
+            }
+            Err(error) => println!("error: {}", error),
+        }
     }
-    println!("{:?}",mem);
 }
